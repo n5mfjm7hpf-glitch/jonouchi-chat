@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>城ノ内保育園 職員グループ</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+  background:#7892aa;
+}
+.header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:58px;
+  background:#f7fbfc;
+  border-bottom:1px solid #cfd8dc;
+  text-align:center;
+  z-index:10;
+}
+.title{
+  font-weight:bold;
+  font-size:16px;
+  margin-top:9px;
+}
+.sub{
+  font-size:12px;
+  color:#666;
+  margin-top:2px;
+}
+#chat{
+  padding:72px 12px 90px;
+  min-height:100vh;
+  box-sizing:border-box;
+}
+.row{
+  display:flex;
+  margin:10px 0;
+}
+.other{
+  justify-content:flex-start;
+}
+.me{
+  justify-content:flex-end;
+}
+.icon{
+  width:36px;
+  height:36px;
+  background:#eef6f7;
+  border-radius:50%;
+  text-align:center;
+  line-height:36px;
+  font-size:13px;
+  font-weight:bold;
+  color:#52616b;
+  margin-right:8px;
+  flex-shrink:0;
+}
+.name{
+  font-size:12px;
+  color:white;
+  margin-bottom:3px;
+}
+.bubble{
+  max-width:72%;
+  padding:10px 13px;
+  border-radius:18px;
+  line-height:1.55;
+  font-size:15px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  box-shadow:0 1px 2px #0001;
+}
+.other .bubble{
+  background:#fff;
+  border-top-left-radius:4px;
+}
+.me .bubble{
+  background:#9eff8b;
+  border-top-right-radius:4px;
+}
+.notice{
+  text-align:center;
+  color:white;
+  font-size:12px;
+  margin:12px 0;
+  opacity:.9;
+}
+.input-area{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  display:flex;
+  gap:8px;
+  padding:10px;
+  background:#f5f5f5;
+  border-top:1px solid #ddd;
+}
+#msg{
+  flex:1;
+  border:1px solid #ccc;
+  border-radius:22px;
+  padding:12px 14px;
+  font-size:16px;
+  outline:none;
+  background:white;
+}
+button{
+  border:none;
+  border-radius:22px;
+  background:#06c755;
+  color:white;
+  padding:0 18px;
+  font-size:15px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="title">🏫 城ノ内保育園 職員グループ</div>
+  <div class="sub">業務連絡</div>
+</div>
+
+<div id="chat"></div>
+
+<div class="input-area">
+  <input id="msg" placeholder="メッセージを入力">
+  <button onclick="send()">送信</button>
+</div>
+
+<script>
+const REPLY_DELAY = 5 * 60 * 1000;
+
+let chatData = JSON.parse(localStorage.getItem("jonouchiChat") || "null");
+
+const firstMessages = [
+  {type:"notice", text:"未確認の業務連絡があります"},
+
+  {type:"other", sender:"濱澤", icon:"濱", text:"おはようございます。\n本日7時30分頃に出勤します。"},
+  {type:"other", sender:"主任", icon:"主", text:"気をつけて😊"},
+
+  {type:"other", sender:"主任", icon:"主", text:"本日、保護者会を予定しています。\n開始前に遊戯室の椅子並べと資料配布の確認をお願いします。"},
+  {type:"other", sender:"伊知地", icon:"伊", text:"確認しました。"},
+
+  {type:"other", sender:"山下", icon:"山", text:"遊戯会で使用する衣装について、クラスごとの仕分けが完了しています。\n午前中に不足分の確認をお願いします。"},
+	  {type:"other", sender:"森本", icon:"森", text:"ありがとうございます。"},
+
+  {type:"other", sender:"伊知地", icon:"伊", text:"本日9時頃に到着予定です。\n到着後、保育室の準備に入ります。"},
+  {type:"other", sender:"主任", icon:"主", text:"気をつけて😊"},
+
+  {type:"other", sender:"園長", icon:"園", text:"園だよりの最終確認をお願いします。\n誤字や日程の記載に間違いがないか確認してください。"},
+  {type:"other", sender:"山下", icon:"山", text:"確認します。"},
+
+  {type:"other", sender:"主任", icon:"主", text:"避難訓練の資料を職員室に置いています。\n各クラスで動線の確認をお願いします。"},
+  {type:"other", sender:"濱澤", icon:"濱", text:"承知しました。"},
+
+  {type:"other", sender:"事務", icon:"事", text:"お迎え時の連絡事項を共有します。\n変更がある園児については掲示板を確認してください。"},
+  {type:"other", sender:"森本", icon:"森", text:"ありがとうございます。"},
+
+  {type:"other", sender:"森本", icon:"森", text:"本日8時30分頃に出勤します。\nよろしくお願いします。"},
+  {type:"other", sender:"主任", icon:"主", text:"気をつけて😊"},
+
+  {type:"other", sender:"山下", icon:"山", text:"制作で使用する折り紙とのりを準備しました。\n不足があれば職員室まで連絡してください。"},
+  {type:"other", sender:"伊知地", icon:"伊", text:"助かります。"},
+
+  {type:"other", sender:"主任", icon:"主", text:"午睡用の布団カバーについて、名前の確認をお願いします。"},
+  {type:"other", sender:"濱澤", icon:"濱", text:"確認しました。"},
+
+  {type:"other", sender:"事務", icon:"事", text:"保護者会の出欠表を職員室に置いています。\n未提出の方がいないか確認をお願いします。"},
+  {type:"other", sender:"山下", icon:"山", text:"確認します。"},
+
+  {type:"other", sender:"山下", icon:"山", text:"遊戯会の小道具をクラスごとに分けています。\n使用前に数の確認をお願いします。"},
+  {type:"other", sender:"森本", icon:"森", text:"ありがとうございます。"},
+
+  {type:"other", sender:"濱澤", icon:"濱", text:"本日10時頃に到着します。\n到着後、乳児クラスの補助に入ります。"},
+  {type:"other", sender:"主任", icon:"主", text:"気をつけて😊"},
+
+  {type:"other", sender:"給食室", icon:"給", text:"給食後、アレルギー対応表の確認をお願いします。\n変更点があるため注意してください。"},
+  {type:"other", sender:"主任", icon:"主", text:"承知しました。"},
+
+  {type:"other", sender:"森本", icon:"森", text:"運動会で使用する備品を倉庫前にまとめています。\n午後に確認をお願いします。"},
+  {type:"other", sender:"伊知地", icon:"伊", text:"ありがとうございます。"},
+
+  {type:"other", sender:"主任", icon:"主", text:"連絡帳の記入漏れがないか、各クラスで確認をお願いします。"},
+  {type:"other", sender:"山下", icon:"山", text:"確認しました。"},
+
+  {type:"other", sender:"伊知地", icon:"伊", text:"本日13時頃に戻ります。\n戻り次第、職員室へ向かいます。"},
+  {type:"other", sender:"主任", icon:"主", text:"気をつけて😊"},
+
+  {type:"other", sender:"山下", icon:"山", text:"遊戯会の音源確認をお願いします。\n再生順に間違いがないか確認してください。"},
+  {type:"other", sender:"濱澤", icon:"濱", text:"確認します。"},
+
+  {type:"other", sender:"事務", icon:"事", text:"保護者会の案内文を印刷しました。\n配布前に内容確認をお願いします。"},
+  {type:"other", sender:"森本", icon:"森", text:"ありがとうございます。"},
+
+  {type:"other", sender:"森本", icon:"森", text:"明日の制作準備を進めています。\n必要な材料は保育室前に置いています。"},
+  {type:"other", sender:"主任", icon:"主", text:"お願いします。"}
+];
+
+const replies = [
+  "承知しました。",
+  "確認しました。",
+  "ありがとうございます。",
+  "お願いします。",
+  "助かります。"
+];
+
+const randomMessages = [
+  {sender:"濱澤", icon:"濱", text:"おはようございます。\n本日7時頃に出勤します。"},
+  {sender:"伊知地", icon:"伊", text:"本日8時30分頃に出勤します。\nよろしくお願いします。"},
+  {sender:"山下", icon:"山", text:"遊戯会の衣装について、未確認分を職員室前に置いています。"},
+  {sender:"森本", icon:"森", text:"制作で使用する画用紙を補充しました。"},
+  {sender:"主任", icon:"主", text:"本日、保護者対応があります。\n必要な場合は職員室までお願いします。"},
+  {sender:"園長", icon:"園", text:"会議資料の確認をお願いします。\n修正点があれば共有してください。"},
+  {sender:"事務", icon:"事", text:"お迎え時間の変更があります。\n掲示板を確認してください。"},
+  {sender:"給食室", icon:"給", text:"本日のアレルギー対応表を更新しています。\n確認をお願いします。"},
+	  {sender:"主任", icon:"主", text:"避難訓練の実施時間を変更しています。\n各クラスで確認をお願いします。"},
+  {sender:"山下", icon:"山", text:"遊戯会の小道具を午後に確認します。\n不足があれば連絡してください。"},
+  {sender:"森本", icon:"森", text:"午睡後、園庭遊びの準備をお願いします。"},
+  {sender:"濱澤", icon:"濱", text:"本日10時頃に到着予定です。"},
+  {sender:"伊知地", icon:"伊", text:"13時頃に戻ります。\n戻り次第、職員室へ向かいます。"},
+  {sender:"事務", icon:"事", text:"保護者会の出欠表を更新しました。\n確認をお願いします。"},
+  {sender:"主任", icon:"主", text:"連絡帳の記入漏れがないか確認をお願いします。"}
+];
+
+function save(){
+  localStorage.setItem("jonouchiChat", JSON.stringify(chatData));
+}
+
+function render(){
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "";
+
+  chatData.forEach(function(m){
+    if(m.type === "notice"){
+      const n = document.createElement("div");
+      n.className = "notice";
+      n.textContent = m.text;
+      chat.appendChild(n);
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "row " + m.type;
+
+    if(m.type === "other"){
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = m.icon || "園";
+      row.appendChild(icon);
+
+      const wrap = document.createElement("div");
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = m.sender || "職員";
+      wrap.appendChild(name);
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = m.text;
+      wrap.appendChild(bubble);
+
+      row.appendChild(wrap);
+    }else{
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = m.text;
+      row.appendChild(bubble);
+    }
+
+    chat.appendChild(row);
+  });
+
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function addMessage(type, text, sender, icon){
+  chatData.push({
+    type:type,
+    text:text,
+    sender:sender || "",
+    icon:icon || ""
+  });
+  save();
+  render();
+}
+
+function makeReply(text){
+  if(
+    text.includes("出勤") ||
+    text.includes("到着") ||
+    text.includes("向か") ||
+    text.includes("戻") ||
+    text.includes("行き")
+  ){
+    return "気をつけて😊";
+  }
+
+  return replies[Math.floor(Math.random() * replies.length)];
+}
+
+function send(){
+  const input = document.getElementById("msg");
+  const text = input.value.trim();
+
+  if(text === "") return;
+
+  addMessage("me", text);
+  input.value = "";
+
+  setTimeout(function(){
+    addMessage("other", makeReply(text), "主任", "主");
+  }, REPLY_DELAY);
+}
+
+function getTodayString(){
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+}
+
+function addDailyMessages(){
+  const today = getTodayString();
+  const last = localStorage.getItem("jonouchiLastOpen");
+
+  if(last === today) return;
+
+  const count = Math.floor(Math.random() * 3) + 2;
+
+  for(let i=0; i<count; i++){
+    const m = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+    chatData.push({
+      type:"other",
+      sender:m.sender,
+      icon:m.icon,
+      text:m.text
+    });
+    chatData.push({
+      type:"other",
+      sender:"主任",
+      icon:"主",
+      text:makeReply(m.text)
+    });
+  }
+
+  localStorage.setItem("jonouchiLastOpen", today);
+  save();
+}
+
+document.getElementById("msg").addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    send();
+  }
+});
+
+if(chatData === null){
+  chatData = firstMessages;
+  save();
+}
+
+addDailyMessages();
+render();
+</script>
+
+</body>
+</html>
